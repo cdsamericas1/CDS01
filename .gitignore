@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Dependencias y compilados de la app web (lab 2)
+node_modules/
+article-list-app/dist/
+
+# Artefactos locales de Bob y secretos
+.bob/artifacts/
+.env
+*.log

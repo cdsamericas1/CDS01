@@ -1,0 +1,24 @@
+{
+    "mcpServers": {
+        "ibmi-mcp-server": {
+            "command": "npx",
+            "args": [
+                "@ibm/ibmi-mcp-server",
+                "--tools",
+                "${workspaceFolder}/.bob/tools"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "NODE_OPTIONS": "--no-deprecation --no-warnings",
+                "MCP_TRANSPORT_TYPE": "stdio",
+                "YAML_ALLOW_DUPLICATE_SOURCES": "true"
+            },
+            "disabled": false,
+            "alwaysAllow": []
+        },
+        "ibmi-mcp-docs": {
+            "type": "streamable-http",
+            "url": "https://ibm-d95bab6e.mintlify.app/mcp"
+        }
+    }
+}

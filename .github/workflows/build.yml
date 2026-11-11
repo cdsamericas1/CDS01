@@ -1,0 +1,37 @@
+name: SAMCO · build y pruebas en IBM i
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ibmi:
+    # Runner propio en la red local (tu Mac): no se abre ningún puerto a internet
+    runs-on: self-hosted
+    env:
+      IBMI_HOST: ${{ vars.IBMI_HOST }}   # IP o nombre del IBM i en la LAN
+      IBMI_USER: ${{ vars.IBMI_USER }}   # usuario dedicado, p. ej. CIBUILD
+      IBMI_LIB: ${{ vars.IBMI_LIB }}     # biblioteca de compilación: SAMCO
+      REMOTE_DIR: /home/${{ vars.IBMI_USER }}/builds/samco
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Copiar las fuentes al IFS del IBM i
+        run: |
+          ssh "$IBMI_USER@$IBMI_HOST" "mkdir -p $REMOTE_DIR"
+          rsync -az --delete --exclude '.git' \
+            --rsync-path=/QOpenSys/pkgs/bin/rsync \
+            ./SAMCO/ "$IBMI_USER@$IBMI_HOST:$REMOTE_DIR/"
+
+      - name: Compilar con makei
+        run: |
+          ssh "$IBMI_USER@$IBMI_HOST" \
+            "cd $REMOTE_DIR && export lib1=$IBMI_LIB && /QOpenSys/pkgs/bin/makei build"
+
+      - name: Compilar y ejecutar las pruebas RPGUnit
+        run: |
+          ssh "$IBMI_USER@$IBMI_HOST" "liblist -a RPGUNIT; liblist -a $IBMI_LIB; \
+            system \"RUCRTRPG TSTPGM($IBMI_LIB/COU300T) SRCSTMF('$REMOTE_DIR/qtestsrc/cou300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/FCOUNTRY)\" && \
+            system \"RUCALLTST TSTPGM($IBMI_LIB/COU300T) DETAIL(*ALL)\""
