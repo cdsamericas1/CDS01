@@ -44,10 +44,16 @@ jobs:
           echo \"=== Verificando archivos ===\"
           ls -la \$RDIR/qtestsrc/log300.test.rpgle
           ls -la \$RDIR/QPROTOSRC/LOG_functions.RPGLEINC
+          echo \"=== Verificando objetos en $IBMI_LIB ===\"
+          system \"CHKOBJ OBJ($IBMI_LIB/LOG) OBJTYPE(*SRVPGM)\" && echo \"LOG.SRVPGM OK\" || echo \"LOG.SRVPGM NO existe\"
+          system \"CHKOBJ OBJ($IBMI_LIB/LOG300) OBJTYPE(*MODULE)\" && echo \"LOG300.MODULE OK\" || echo \"LOG300.MODULE NO existe\"
           echo \"=== Library list ===\"
           liblist
           echo \"=== Compilando test program ===\"
-          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG $IBMI_LIB/RPGUNIT) OUTPUT(*PRINT)\"
+          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
+          RC=\$?
+          echo \"RC de RUCRTRPG: \$RC\"
+          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*SRVPGM)\" && echo \"LOG300T creado OK\" || echo \"LOG300T NO existe\"
           echo \"=== Ejecutando pruebas ===\"
           system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
           EOF"
