@@ -35,35 +35,25 @@ jobs:
 
       - name: Compilar y ejecutar pruebas RPGUnit · LOG300
         run: |
-          # Genera el script en el IBM i usando REMOTE_DIR que ya tiene el path correcto
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "cat > /tmp/run_tests.sh << 'EOF'
+          # Escribe el script localmente y lo sube con scp para evitar problemas de escaping
+          cat > /tmp/run_tests_local.sh << LOCALEOF
           export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
-          RDIR=$REMOTE_DIR
+          RDIR=\$(cd $REMOTE_DIR && pwd -P)
+          echo "RDIR resuelto: \$RDIR"
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
-          echo \"=== Verificando archivos ===\"
-          ls -la \$RDIR/qtestsrc/log300.test.rpgle
-          ls -la \$RDIR/QPROTOSRC/LOG_functions.RPGLEINC
-          echo \"=== Listando directorio raiz ===\"
-          ls -la \$RDIR/
-          echo \"=== Listando qtestsrc ===\"
-          ls -la \$RDIR/qtestsrc/
-          echo \"=== Verificando objetos en $IBMI_LIB ===\"
-          system \"CHKOBJ OBJ($IBMI_LIB/LOG) OBJTYPE(*SRVPGM)\" && echo \"LOG.SRVPGM OK\" || echo \"LOG.SRVPGM NO existe\"
-          system \"CHKOBJ OBJ($IBMI_LIB/LOG300) OBJTYPE(*MODULE)\" && echo \"LOG300.MODULE OK\" || echo \"LOG300.MODULE NO existe\"
-          echo \"=== Library list ===\"
-          liblist
-          echo \"=== Paso 1: CRTRPGMOD del test ===\"
-          system \"CRTRPGMOD MODULE($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') DBGVIEW(*ALL) OPTION(*EVENTF)\"
+          echo "=== Compilando test program ==="
+          system "CRTRPGMOD MODULE($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') DBGVIEW(*ALL) OPTION(*EVENTF)"
           RC=\$?
-          echo \"RC de CRTRPGMOD: \$RC\"
-          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*MODULE)\" && echo \"LOG300T.MODULE creado OK\" || echo \"LOG300T.MODULE NO existe - error de compilacion\"
-          echo \"=== Paso 2: CRTSRVPGM del test ===\"
-          system \"CRTSRVPGM SRVPGM($IBMI_LIB/LOG300T) MODULE($IBMI_LIB/LOG300T) BNDSRVPGM($IBMI_LIB/LOG) EXPORT(*ALL)\"
-          RC=\$?
-          echo \"RC de CRTSRVPGM: \$RC\"
-          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*SRVPGM)\" && echo \"LOG300T.SRVPGM creado OK\" || echo \"LOG300T.SRVPGM NO existe\"
-          echo \"=== Ejecutando pruebas ===\"
-          system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
-          EOF"
+          echo "RC de CRTRPGMOD: \$RC"
+          if [ \$RC -eq 0 ]; then
+            system "CRTSRVPGM SRVPGM($IBMI_LIB/LOG300T) MODULE($IBMI_LIB/LOG300T) BNDSRVPGM($IBMI_LIB/LOG) EXPORT(*ALL)"
+            echo "=== Ejecutando pruebas ==="
+            system "RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)"
+          else
+            echo "ERROR: CRTRPGMOD falló — revisar spool en IBM i"
+            exit 1
+          fi
+          LOCALEOF
+          scp -i "$SSH_KEY" /tmp/run_tests_local.sh "$IBMI_USER@$IBMI_HOST:/tmp/run_tests.sh"
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests.sh"
