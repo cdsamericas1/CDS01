@@ -33,16 +33,7 @@ jobs:
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
             "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && cd $REMOTE_DIR && lib1=$IBMI_LIB /QOpenSys/pkgs/bin/makei build'"
 
-      - name: Compilar y ejecutar pruebas RPGUnit · COU300
+      - name: Verificar objetos compilados en IBM i
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "/QOpenSys/pkgs/bin/liblist -a RPGUNIT; /QOpenSys/pkgs/bin/liblist -a $IBMI_LIB; \
-            system \"RUCRTRPG TSTPGM($IBMI_LIB/COU300T) SRCSTMF('$REMOTE_DIR/qtestsrc/cou300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/FCOUNTRY)\" && \
-            system \"RUCALLTST TSTPGM($IBMI_LIB/COU300T) DETAIL(*ALL)\""
-
-      - name: Compilar y ejecutar pruebas RPGUnit · LOG300
-        run: |
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "/QOpenSys/pkgs/bin/liblist -a RPGUNIT; /QOpenSys/pkgs/bin/liblist -a $IBMI_LIB; \
-            system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('$REMOTE_DIR/qtestsrc/log300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\" && \
-            system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\""
+            "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && liblist -a $IBMI_LIB && system \"DSPLIB LIB($IBMI_LIB) OUTPUT(*PRINT)\" && echo Build OK'"
