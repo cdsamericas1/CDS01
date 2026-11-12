@@ -5,6 +5,7 @@
 // ============================================================
 ctl-opt nomain;
 
+/include RPGUNIT,RPGUNIT1
 /include 'QPROTOSRC/LOG_functions.RPGLEINC'
 
 // -------------------------------------------------------
