@@ -35,8 +35,10 @@ jobs:
 
       - name: Compilar y ejecutar pruebas RPGUnit · LOG300
         run: |
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && \
-            liblist -a RPGUNIT && liblist -a $IBMI_LIB && \
-            system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF($REMOTE_DIR/qtestsrc/log300.test.rpgle) INCDIR($REMOTE_DIR/QPROTOSRC) BNDSRVPGM($IBMI_LIB/LOG)\" && \
-            system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"'"
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash -s" << ENDSSH
+          export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
+          liblist -a RPGUNIT
+          liblist -a $IBMI_LIB
+          system "RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('$REMOTE_DIR/qtestsrc/log300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)"
+          system "RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)"
+          ENDSSH
