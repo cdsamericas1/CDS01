@@ -41,7 +41,14 @@ jobs:
           RDIR=$REMOTE_DIR
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
-          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
+          echo \"=== Verificando archivos ===\"
+          ls -la \$RDIR/qtestsrc/log300.test.rpgle
+          ls -la \$RDIR/QPROTOSRC/LOG_functions.RPGLEINC
+          echo \"=== Library list ===\"
+          liblist
+          echo \"=== Compilando test program ===\"
+          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG $IBMI_LIB/RPGUNIT) OUTPUT(*PRINT)\"
+          echo \"=== Ejecutando pruebas ===\"
           system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
           EOF"
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests.sh"
