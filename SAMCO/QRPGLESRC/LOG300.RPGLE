@@ -27,7 +27,7 @@
           wPgmName = pgmName;
         endif;
         p2 = p1 + pos;
-        data2 = 'User: ' + user + ' * ';
+        data2 = 'User: ' +user + ' * ';
         if wPgmName <> *blanks;
           data2 += 'Pgm: ' + %trim(wPgmName) + ' * ';
         endif;

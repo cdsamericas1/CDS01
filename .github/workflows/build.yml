@@ -23,12 +23,10 @@ jobs:
       - name: Copiar las fuentes al IFS del IBM i
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "mkdir -p $REMOTE_DIR"
-          # --checksum fuerza actualización real del contenido (no sólo timestamps)
           rsync -az --checksum --delete --exclude '.git' \
             -e "ssh -i $SSH_KEY" \
             --rsync-path=/QOpenSys/pkgs/bin/rsync \
             ./SAMCO/ "$IBMI_USER@$IBMI_HOST:$REMOTE_DIR/"
-          # Recrear archivos RPG del test con rm+cp para forzar nuevo inodo IFS
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
             "/QOpenSys/pkgs/bin/bash -c 'for f in \$(find $REMOTE_DIR/qtestsrc -name \"*.rpgle\"); do cp \"\$f\" \"\$f.tmp\" && rm \"\$f\" && mv \"\$f.tmp\" \"\$f\" && attr \"\$f\" CCSID=1208; done'"
 
