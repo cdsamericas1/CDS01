@@ -57,5 +57,5 @@ jobs:
             exit 1
           fi
           LOCALEOF
-          scp -i "$SSH_KEY" /tmp/run_tests_local.sh "$IBMI_USER@$IBMI_HOST:/tmp/run_tests.sh"
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests.sh"
+          scp -i "$SSH_KEY" /tmp/run_tests_local.sh "$IBMI_USER@$IBMI_HOST:/tmp/run_tests_${{ github.run_id }}.sh"
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests_${{ github.run_id }}.sh"
