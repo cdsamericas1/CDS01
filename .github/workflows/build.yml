@@ -31,7 +31,7 @@ jobs:
       - name: Compilar con makei
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "lib1=$IBMI_LIB /QOpenSys/pkgs/bin/makei build -d $REMOTE_DIR"
+            "PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin; lib1=$IBMI_LIB /QOpenSys/pkgs/bin/makei build -d $REMOTE_DIR"
 
       - name: Compilar y ejecutar pruebas RPGUnit · COU300
         run: |
