@@ -44,22 +44,16 @@ jobs:
           echo "RDIR resuelto: \$RDIR"
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
-          echo "=== Copiando fuentes al source physical file ==="
-          system "CRTSRCPF FILE($IBMI_LIB/QTESTSRC) RCDLEN(112) MBR(*NONE)" 2>/dev/null || true
-          system "CRTSRCPF FILE($IBMI_LIB/QPROTOSRC) RCDLEN(112) MBR(*NONE)" 2>/dev/null || true
-          system "ADDPFM FILE($IBMI_LIB/QTESTSRC) MBR(LOG300T) SRCTYPE(RPGLE)" 2>/dev/null || true
-          system "CPYFRMSTMF FROMSTMF('\$RDIR/qtestsrc/log300.test.rpgle') TOMBR('/QSYS.LIB/$IBMI_LIB.LIB/QTESTSRC.FILE/LOG300T.MBR') MBROPT(*REPLACE) STMFCCSID(1208) DBFCCSID(*FILE)"
-          system "ADDPFM FILE($IBMI_LIB/QPROTOSRC) MBR(LOG_FUNCTI) SRCTYPE(RPGLEINC)" 2>/dev/null || true
-          system "CPYFRMSTMF FROMSTMF('\$RDIR/QPROTOSRC/LOG_functions.RPGLEINC') TOMBR('/QSYS.LIB/$IBMI_LIB.LIB/QPROTOSRC.FILE/LOG_FUNCTI.MBR') MBROPT(*REPLACE) STMFCCSID(1208) DBFCCSID(*FILE)"
-          echo "=== Compilando test con RUCRTRPG ==="
-          system "RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCFILE($IBMI_LIB/QTESTSRC) SRCMBR(LOG300T) BNDSRVPGM($IBMI_LIB/LOG)"
+          echo "=== Compilando test con SRCSTMF desde IFS ==="
+          system "CRTRPGMOD MODULE($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC' '\$RDIR') DBGVIEW(*ALL)"
           RC=\$?
-          echo "RC de RUCRTRPG: \$RC"
+          echo "RC de CRTRPGMOD: \$RC"
           if [ \$RC -eq 0 ]; then
+            system "CRTSRVPGM SRVPGM($IBMI_LIB/LOG300T) MODULE($IBMI_LIB/LOG300T) BNDSRVPGM($IBMI_LIB/LOG) EXPORT(*ALL)"
             echo "=== Ejecutando pruebas ==="
             system "RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)"
           else
-            echo "ERROR: RUCRTRPG falló"
+            echo "ERROR: CRTRPGMOD falló"
             exit 1
           fi
           LOCALEOF

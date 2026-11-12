@@ -5,7 +5,7 @@
 // ============================================================
 ctl-opt nomain;
 
-/include QPROTOSRC,LOG_functions
+/include 'QPROTOSRC/LOG_functions.RPGLEINC'
 
 // -------------------------------------------------------
 // Test 1: AddLogEntry no falla con un mensaje normal
