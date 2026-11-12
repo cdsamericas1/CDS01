@@ -35,10 +35,10 @@ jobs:
 
       - name: Compilar y ejecutar pruebas RPGUnit · LOG300
         run: |
-          # Genera el script en el IBM i con los valores correctos
+          # Genera el script en el IBM i usando REMOTE_DIR que ya tiene el path correcto
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "cat > /tmp/run_tests.sh << 'EOF'
           export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
-          RDIR=/home/$(whoami)/builds/samco
+          RDIR=$REMOTE_DIR
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
           system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
