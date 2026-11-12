@@ -23,25 +23,21 @@ jobs:
       - name: Copiar las fuentes al IFS del IBM i
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "mkdir -p $REMOTE_DIR"
-          rsync -az --delete --exclude '.git' \
+          # --checksum fuerza actualización real del contenido (no sólo timestamps)
+          rsync -az --checksum --delete --exclude '.git' \
             -e "ssh -i $SSH_KEY" \
             --rsync-path=/QOpenSys/pkgs/bin/rsync \
             ./SAMCO/ "$IBMI_USER@$IBMI_HOST:$REMOTE_DIR/"
+          # Recrear archivos RPG del test con rm+cp para forzar nuevo inodo IFS
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
+            "/QOpenSys/pkgs/bin/bash -c 'for f in \$(find $REMOTE_DIR/qtestsrc -name \"*.rpgle\"); do cp \"\$f\" \"\$f.tmp\" && rm \"\$f\" && mv \"\$f.tmp\" \"\$f\" && attr \"\$f\" CCSID=1208; done'"
 
       - name: Compilar con makei
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
             "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && cd $REMOTE_DIR && lib1=$IBMI_LIB /QOpenSys/pkgs/bin/makei build'"
 
-      - name: Compilar y ejecutar pruebas RPGUnit · LOG300
+      - name: Ejecutar pruebas RPGUnit · LOG300
         run: |
-          # Genera el script en el IBM i con los valores correctos
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "cat > /tmp/run_tests.sh << 'EOF'
-          export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
-          RDIR=/home/$(whoami)/builds/samco
-          liblist -a RPGUNIT
-          liblist -a $IBMI_LIB
-          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
-          system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
-          EOF"
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests.sh"
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
+            "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && liblist -af RPGUNIT && liblist -af $IBMI_LIB && system \"RPGUNIT/RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"'"
