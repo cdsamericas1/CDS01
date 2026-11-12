@@ -15,7 +15,6 @@
      p AddLogEntry     b                   export
      d AddLogEntry     pi
      d  entry                       500    value
-     d  pgmName                      10    value options(*nopass)
 
      d  data2          s            500    varying
       /free
@@ -23,10 +22,7 @@
           init();
         endif;
         p2 = p1 + pos;
-        data2 = 'User: ' + user + ' * ';
-        if %parms() >= 2 and pgmName <> *blanks;
-          data2 += 'Pgm: ' + %trim(pgmName) + ' * ';
-        endif;
+        data2 = 'User: ' +user + ' * ';
         data2 += 'Date: '  + %char(%Timestamp()) + ' * ' ;
         data2 += 'Msg: '  + %trim(entry) + ' ***' ;
         data = data2;
