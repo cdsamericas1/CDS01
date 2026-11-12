@@ -44,16 +44,17 @@ jobs:
           echo "RDIR resuelto: \$RDIR"
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
-          echo "=== Compilando test con SRCSTMF desde IFS ==="
-          system "CRTRPGMOD MODULE($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC' '\$RDIR') DBGVIEW(*ALL)"
+          echo "=== Verificando acceso al archivo desde este job ==="
+          cat "\$RDIR/qtestsrc/log300.test.rpgle" | head -3
+          echo "=== Compilando test con RUCRTRPG SRCSTMF ==="
+          system "RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)"
           RC=\$?
-          echo "RC de CRTRPGMOD: \$RC"
+          echo "RC de RUCRTRPG: \$RC"
           if [ \$RC -eq 0 ]; then
-            system "CRTSRVPGM SRVPGM($IBMI_LIB/LOG300T) MODULE($IBMI_LIB/LOG300T) BNDSRVPGM($IBMI_LIB/LOG) EXPORT(*ALL)"
             echo "=== Ejecutando pruebas ==="
             system "RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)"
           else
-            echo "ERROR: CRTRPGMOD falló"
+            echo "ERROR: RUCRTRPG falló"
             exit 1
           fi
           LOCALEOF
