@@ -49,11 +49,16 @@ jobs:
           system \"CHKOBJ OBJ($IBMI_LIB/LOG300) OBJTYPE(*MODULE)\" && echo \"LOG300.MODULE OK\" || echo \"LOG300.MODULE NO existe\"
           echo \"=== Library list ===\"
           liblist
-          echo \"=== Compilando test program ===\"
-          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
+          echo \"=== Paso 1: CRTRPGMOD del test ===\"
+          system \"CRTRPGMOD MODULE($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') DBGVIEW(*ALL) OPTION(*EVENTF)\"
           RC=\$?
-          echo \"RC de RUCRTRPG: \$RC\"
-          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*SRVPGM)\" && echo \"LOG300T creado OK\" || echo \"LOG300T NO existe\"
+          echo \"RC de CRTRPGMOD: \$RC\"
+          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*MODULE)\" && echo \"LOG300T.MODULE creado OK\" || echo \"LOG300T.MODULE NO existe - error de compilacion\"
+          echo \"=== Paso 2: CRTSRVPGM del test ===\"
+          system \"CRTSRVPGM SRVPGM($IBMI_LIB/LOG300T) MODULE($IBMI_LIB/LOG300T) BNDSRVPGM($IBMI_LIB/LOG) EXPORT(*ALL)\"
+          RC=\$?
+          echo \"RC de CRTSRVPGM: \$RC\"
+          system \"CHKOBJ OBJ($IBMI_LIB/LOG300T) OBJTYPE(*SRVPGM)\" && echo \"LOG300T.SRVPGM creado OK\" || echo \"LOG300T.SRVPGM NO existe\"
           echo \"=== Ejecutando pruebas ===\"
           system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
           EOF"
