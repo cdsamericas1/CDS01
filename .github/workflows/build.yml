@@ -35,10 +35,13 @@ jobs:
 
       - name: Compilar y ejecutar pruebas RPGUnit · LOG300
         run: |
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash -s" << ENDSSH
+          # Genera el script en el IBM i con los valores correctos
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "cat > /tmp/run_tests.sh << 'EOF'
           export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
+          RDIR=/home/$(whoami)/builds/samco
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
-          system "RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('$REMOTE_DIR/qtestsrc/log300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)"
-          system "RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)"
-          ENDSSH
+          system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\"
+          system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\"
+          EOF"
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "/QOpenSys/pkgs/bin/bash /tmp/run_tests.sh"
