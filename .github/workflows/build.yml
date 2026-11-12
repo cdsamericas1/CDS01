@@ -44,6 +44,10 @@ jobs:
           echo \"=== Verificando archivos ===\"
           ls -la \$RDIR/qtestsrc/log300.test.rpgle
           ls -la \$RDIR/QPROTOSRC/LOG_functions.RPGLEINC
+          echo \"=== Listando directorio raiz ===\"
+          ls -la \$RDIR/
+          echo \"=== Listando qtestsrc ===\"
+          ls -la \$RDIR/qtestsrc/
           echo \"=== Verificando objetos en $IBMI_LIB ===\"
           system \"CHKOBJ OBJ($IBMI_LIB/LOG) OBJTYPE(*SRVPGM)\" && echo \"LOG.SRVPGM OK\" || echo \"LOG.SRVPGM NO existe\"
           system \"CHKOBJ OBJ($IBMI_LIB/LOG300) OBJTYPE(*MODULE)\" && echo \"LOG300.MODULE OK\" || echo \"LOG300.MODULE NO existe\"
