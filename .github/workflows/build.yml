@@ -46,8 +46,8 @@ jobs:
           liblist -a $IBMI_LIB
           echo "=== Verificando acceso al archivo desde este job ==="
           cat "\$RDIR/qtestsrc/log300.test.rpgle" | head -3
-          echo "=== Compilando test con RUCRTRPG SRCSTMF ==="
-          system "RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)"
+          echo "=== Compilando test con RUCRTRPG SRCSTMF via qsh ==="
+          qsh -c "liblist -a RPGUNIT; liblist -a $IBMI_LIB; RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('\$RDIR/qtestsrc/log300.test.rpgle') INCDIR('\$RDIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)"
           RC=\$?
           echo "RC de RUCRTRPG: \$RC"
           if [ \$RC -eq 0 ]; then
