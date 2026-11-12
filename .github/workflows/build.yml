@@ -15,6 +15,7 @@ jobs:
       IBMI_LIB: ${{ vars.IBMI_LIB }}     # biblioteca de compilación: OSWLABBOB
       REMOTE_DIR: /home/${{ vars.IBMI_USER }}/builds/samco
       SSH_KEY: ~/.ssh/ibmi_actions
+      IBMI_PATH: /QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
     steps:
       - name: Obtener el código
         uses: actions/checkout@v4
@@ -30,16 +31,18 @@ jobs:
       - name: Compilar con makei
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "cd $REMOTE_DIR && lib1=$IBMI_LIB /QOpenSys/pkgs/bin/makei build"
+            "PATH=$IBMI_PATH lib1=$IBMI_LIB makei build -d $REMOTE_DIR"
 
       - name: Compilar y ejecutar pruebas RPGUnit · COU300
         run: |
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "liblist -a RPGUNIT; liblist -a $IBMI_LIB; \
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
+            "PATH=$IBMI_PATH liblist -a RPGUNIT; liblist -a $IBMI_LIB; \
             system \"RUCRTRPG TSTPGM($IBMI_LIB/COU300T) SRCSTMF('$REMOTE_DIR/qtestsrc/cou300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/FCOUNTRY)\" && \
             system \"RUCALLTST TSTPGM($IBMI_LIB/COU300T) DETAIL(*ALL)\""
 
       - name: Compilar y ejecutar pruebas RPGUnit · LOG300
         run: |
-          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" "liblist -a RPGUNIT; liblist -a $IBMI_LIB; \
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
+            "PATH=$IBMI_PATH liblist -a RPGUNIT; liblist -a $IBMI_LIB; \
             system \"RUCRTRPG TSTPGM($IBMI_LIB/LOG300T) SRCSTMF('$REMOTE_DIR/qtestsrc/log300.test.rpgle') INCDIR('$REMOTE_DIR/QPROTOSRC') BNDSRVPGM($IBMI_LIB/LOG)\" && \
             system \"RUCALLTST TSTPGM($IBMI_LIB/LOG300T) DETAIL(*ALL)\""
