@@ -1,6 +1,7 @@
 {
     "version": "0.0.1",
     "build": {
-        "tgtCcsid": "*JOBRUN"
-    }
+        "tgtCcsid": "37"
+    },
+    "preUsrlibl": ["RPGUNIT"]
 }
