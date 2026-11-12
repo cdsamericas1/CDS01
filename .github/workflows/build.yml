@@ -42,6 +42,12 @@ jobs:
           export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin
           RDIR=\$(cd $REMOTE_DIR && pwd -P)
           echo "RDIR resuelto: \$RDIR"
+          echo "=== CCSID del archivo de pruebas ==="
+          attr "\$RDIR/qtestsrc/log300.test.rpgle"
+          echo "=== Primeras 3 lineas del archivo ==="
+          head -3 "\$RDIR/qtestsrc/log300.test.rpgle"
+          echo "=== Autoridades ==="
+          ls -la "\$RDIR/qtestsrc/log300.test.rpgle"
           liblist -a RPGUNIT
           liblist -a $IBMI_LIB
           echo "=== Compilando test program ==="
