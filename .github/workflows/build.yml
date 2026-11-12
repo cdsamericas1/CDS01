@@ -28,7 +28,7 @@ jobs:
             --rsync-path=/QOpenSys/pkgs/bin/rsync \
             ./SAMCO/ "$IBMI_USER@$IBMI_HOST:$REMOTE_DIR/"
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
-            "/QOpenSys/pkgs/bin/bash -c 'find $REMOTE_DIR/qtestsrc -name \"*.rpgle\" -exec /QOpenSys/pkgs/bin/setccsid 1208 {} \;'"
+            "/QOpenSys/pkgs/bin/bash -c 'find $REMOTE_DIR/qtestsrc -name \"*.rpgle\" | while read f; do attr -C 1208 \"\$f\"; done'"
 
       - name: Compilar con makei
         run: |
