@@ -3,10 +3,67 @@
 // Pruebas RPGUnit para el módulo LOG300 (AddLogEntry)
 // Lab DevOps en Vivo · iPower26 · Bogotá · Nov 2026
 // ============================================================
+// Prototipo inline - sin /include externos para evitar problemas
+// de CCSID y rutas en IBM i al compilar con makei + SRCSTMF.
+// ============================================================
 ctl-opt nomain;
 
-/include QPROTOSRC,LOG_functions
-/include RPGUNIT/QINCLUDE,ASSERT
+// --- Prototipo de la función a probar ---
+dcl-pr AddLogEntry extproc('ADDLOGENTRY');
+  entry    char(500) value;
+  pgmName  char(10)  value options(*nopass);
+end-pr;
+
+// --- Prototipo de assert de RPGUnit (extproc publico) ---
+dcl-pr assert extproc('assert') opdesc;
+  condition  ind const;
+  msgIfFalse varchar(16384) options(*varsize : *nopass) const;
+end-pr;
+
+// --- APIs para inicializar SAMLOG (user space) ---
+dcl-pr crtusrspc extpgm('QUSCRTUS');
+  usrspc    char(20);
+  spc_attr  char(10) const;
+  spc_size  int(10)  const;
+  spc_init  char(1)  const;
+  spc_aut   char(10) const;
+  spc_text  char(50) const;
+  spc_replace char(10) const;
+  errcod    char(256);
+end-pr;
+dcl-pr rtvusrspcptr extpgm('QUSPTRUS');
+  usrspc  char(20) const;
+  ptr     pointer;
+end-pr;
+
+// Error code DS para suprimir errores de API
+dcl-ds errDs;
+  errBytProv int(10) inz(256);
+  errBytAvail int(10) inz(0);
+  errMsgId   char(7);
+  errReserv  char(1);
+  errMsgDta  char(240);
+end-ds;
+
+dcl-ds samlogDs based(pSamlog);
+  samlogPos int(10);
+end-ds;
+
+// -------------------------------------------------------
+// setUp: inicializa/reinicia el user space SAMLOG antes
+//        de cada prueba para que LOG300 funcione limpio.
+// -------------------------------------------------------
+dcl-proc setUp export;
+  dcl-pi *n end-pi;
+  dcl-s  usrspc char(20) inz('SAMLOG    OSWLABBOB ');
+  // *YES reemplaza si existe, crea si no; errores van a errDs (no escape)
+  errBytAvail = 0;
+  crtusrspc(usrspc : 'LOG       ' : 65536 : x'00'
+             : '*ALL      ' : 'RPGUnit test log space            '
+             : '*YES      ' : errDs);
+  rtvusrspcptr(usrspc : pSamlog);
+  samlogPos = 7;
+end-proc;
 
 // -------------------------------------------------------
 // Test 1: AddLogEntry no falla con un mensaje normal
@@ -23,7 +80,7 @@ dcl-proc test_addLogEntry_normal export;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló con un mensaje normal');
+  assert(resultado : 'AddLogEntry fallo con un mensaje normal');
 end-proc;
 
 // -------------------------------------------------------
@@ -41,7 +98,7 @@ dcl-proc test_addLogEntry_empty export;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló con mensaje vacío');
+  assert(resultado : 'AddLogEntry fallo con mensaje vacio');
 end-proc;
 
 // -------------------------------------------------------
@@ -62,7 +119,7 @@ dcl-proc test_addLogEntry_maxLen export;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló con mensaje de longitud máxima');
+  assert(resultado : 'AddLogEntry fallo con mensaje de longitud maxima');
 end-proc;
 
 // -------------------------------------------------------
@@ -80,7 +137,7 @@ dcl-proc test_addLogEntry_conPgmName export;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló al pasar nombre de programa');
+  assert(resultado : 'AddLogEntry fallo al pasar nombre de programa');
 end-proc;
 
 // -------------------------------------------------------
@@ -98,7 +155,7 @@ dcl-proc test_addLogEntry_sinPgmName export;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló cuando pgmName es omitido');
+  assert(resultado : 'AddLogEntry fallo cuando pgmName es omitido');
 end-proc;
 
 // -------------------------------------------------------
@@ -110,11 +167,11 @@ dcl-proc test_addLogEntry_pgmNameVacio export;
   dcl-s resultado ind;
 
   monitor;
-    AddLogEntry('Mensaje con programa vacío' : '');
+    AddLogEntry('Mensaje con programa vacio' : '');
     resultado = *on;
   on-error;
     resultado = *off;
   endmon;
 
-  assert(resultado : 'AddLogEntry falló con pgmName vacío');
+  assert(resultado : 'AddLogEntry fallo con pgmName vacio');
 end-proc;
