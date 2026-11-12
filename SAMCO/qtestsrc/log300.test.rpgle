@@ -63,3 +63,57 @@ dcl-proc test_addLogEntry_maxLen export;
 
   assert(resultado : 'AddLogEntry falló con mensaje de longitud máxima');
 end-proc;
+
+// -------------------------------------------------------
+// Test 4: AddLogEntry acepta pgmName con nombre de programa
+// -------------------------------------------------------
+dcl-proc test_addLogEntry_conPgmName export;
+  dcl-pi *n end-pi;
+
+  dcl-s resultado ind;
+
+  monitor;
+    AddLogEntry('Orden creada' : 'ORD200');
+    resultado = *on;
+  on-error;
+    resultado = *off;
+  endmon;
+
+  assert(resultado : 'AddLogEntry falló al pasar nombre de programa');
+end-proc;
+
+// -------------------------------------------------------
+// Test 5: AddLogEntry funciona sin pasar pgmName (compatibilidad)
+// -------------------------------------------------------
+dcl-proc test_addLogEntry_sinPgmName export;
+  dcl-pi *n end-pi;
+
+  dcl-s resultado ind;
+
+  monitor;
+    AddLogEntry('Llamada sin pgmName');
+    resultado = *on;
+  on-error;
+    resultado = *off;
+  endmon;
+
+  assert(resultado : 'AddLogEntry falló cuando pgmName es omitido');
+end-proc;
+
+// -------------------------------------------------------
+// Test 6: AddLogEntry acepta pgmName vacío sin fallar
+// -------------------------------------------------------
+dcl-proc test_addLogEntry_pgmNameVacio export;
+  dcl-pi *n end-pi;
+
+  dcl-s resultado ind;
+
+  monitor;
+    AddLogEntry('Mensaje con programa vacío' : '');
+    resultado = *on;
+  on-error;
+    resultado = *off;
+  endmon;
+
+  assert(resultado : 'AddLogEntry falló con pgmName vacío');
+end-proc;
