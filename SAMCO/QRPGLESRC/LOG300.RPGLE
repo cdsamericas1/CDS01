@@ -16,7 +16,6 @@
      d AddLogEntry     pi
      d  entry                       500    value
      d  pgmName                      10    value options(*nopass)
-                                                 inz(*blanks)
 
      d  data2          s            500    varying
      d  wPgmName       s             10    inz(*blanks)
