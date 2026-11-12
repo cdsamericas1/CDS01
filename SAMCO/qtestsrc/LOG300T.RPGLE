@@ -5,8 +5,8 @@
 // ============================================================
 ctl-opt nomain;
 
-/include RPGUNIT,RPGUNIT1
-/include 'QPROTOSRC/LOG_functions.RPGLEINC'
+/include QPROTOSRC,LOG_functions
+/include RPGUNIT/QINCLUDE,ASSERT
 
 // -------------------------------------------------------
 // Test 1: AddLogEntry no falla con un mensaje normal
@@ -53,7 +53,7 @@ dcl-proc test_addLogEntry_maxLen export;
   dcl-s msgLargo char(500) inz(*blanks);
   dcl-s resultado ind;
 
-  msgLargo = %subst('X' : 1 : 1);  // un carácter para simplificar
+  msgLargo = %subst('X' : 1 : 1);
 
   monitor;
     AddLogEntry(msgLargo);
