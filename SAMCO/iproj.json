@@ -8,6 +8,7 @@
     "QPROTOSRC"
   ],
   "preUsrlibl": [
+    "RPGUNIT",
     "&lib1"
   ],
   "postUsrlibl": [],
