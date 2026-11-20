@@ -1,191 +1,160 @@
-# Lab en Vivo · DevOps en IBM i con Bob
-**iPower26 · Bogotá · 18 de noviembre de 2026**
+# Lab DevOps en Vivo · iPower26 · Bogotá · Nov 2026
 
-> **Duración:** 15 minutos  
-> **Nivel:** Mixto (principiantes a expertos en IBM i)  
-> **Requisitos:** VS Code + IBM Bob + acceso a IBM i + repo clonado
-
----
-
-## El escenario
-
-El equipo de auditoría solicitó una mejora al sistema de log de SAMCO:
-
-> *"El log actual registra usuario, timestamp y mensaje. Necesitamos también saber **qué programa** generó cada entrada. Sin eso, no podemos cumplir el requerimiento de trazabilidad."*
-
-Hoy vas a hacer ese cambio — en vivo, con Bob, pasando por Git y el pipeline completo.
+## Resumen
+Demo en vivo de un flujo DevOps completo en IBM i:
+requerimiento del auditor → código → pruebas automatizadas → pipeline CI/CD → PR con evidencia.
 
 ---
 
-## El programa: `LOG300.RPGLE`
+## Estado del lab antes de la demo
 
-El módulo que vamos a modificar es [`SAMCO/QRPGLESRC/LOG300.RPGLE`](SAMCO/QRPGLESRC/LOG300.RPGLE).
+| Componente | Estado |
+|---|---|
+| Rama Git | `feat/log-add-pgmname` desde commit `360034e` |
+| `LOG300.RPGLE` | Sin `pgmName` — punto de partida |
+| `qtestsrc/` | Sin tests |
+| IBM i `LOG300.MODULE` | Compilado sin `pgmName` |
+| IBM i `LOG300T.*` | No existe |
+| Runner self-hosted | Activo en Mac |
 
-Es el corazón del sistema de auditoría de SAMCO: cada vez que un programa necesita dejar evidencia de lo que hizo, llama a `AddLogEntry`.
+---
 
-**Hoy solo registra:**
+## Guión paso a paso
+
+### Prompt 1 — El requerimiento
 ```
-User: OSVALDO * Date: 2026-11-18-14.23.01.000000 * Msg: Orden creada ***
+"El auditor de SAMCO necesita que el log registre el programa
+de origen en cada entrada"
 ```
+Bob explica el cambio necesario y pide confirmación.
 
-**Después del lab registrará:**
+---
+
+### Prompt 2 — Modificar LOG300.RPGLE
 ```
-User: OSVALDO * Pgm: ORD200 * Date: 2026-11-18-14.23.01.000000 * Msg: Orden creada ***
+"si"
+```
+Bob agrega `pgmName` como parámetro opcional a `AddLogEntry`.
+
+Cambios en `SAMCO/QRPGLESRC/LOG300.RPGLE`:
+- Nueva línea: `d pgmName  10  value options(*nopass)`
+- Variable local `wPgmName`
+- Lógica `if %parms() >= 2`
+- Log incluye `Pgm: ORD200 *` cuando se pasa el nombre
+
+---
+
+### Prompt 3 — Actualizar el prototipo
+```
+"si"
+```
+Bob actualiza `SAMCO/QPROTOSRC/LOG_functions.RPGLEINC`
+con la nueva firma para que todos los compiladores la conozcan.
+
+---
+
+### Prompt 4 — Crear pruebas RPGUnit
+```
+"crea la suite de pruebas con rpgunit"
+```
+Bob crea 6 archivos:
+
+| Archivo | Propósito |
+|---|---|
+| `qtestsrc/LOG300T.RPGLE` | 6 pruebas + setUp |
+| `qtestsrc/Rules.mk` | makei sabe qué compilar |
+| `qtestsrc/LOG300T.ILESRVPGM` | Enlace con LOG y RPGUnit |
+| `qtestsrc/.ibmi.json` | CCSID 37, RPGUNIT en liblist |
+| `SAMCO/Rules.mk` | qtestsrc agregado a SUBDIRS |
+| `SAMCO/iproj.json` | RPGUNIT en preUsrlibl |
+
+**6 casos de prueba:**
+1. `test_addLogEntry_normal` — mensaje normal
+2. `test_addLogEntry_empty` — mensaje vacío
+3. `test_addLogEntry_maxLen` — 500 caracteres
+4. `test_addLogEntry_conPgmName` — con pgmName ← **nueva feature**
+5. `test_addLogEntry_sinPgmName` — sin pgmName (compatibilidad)
+6. `test_addLogEntry_pgmNameVacio` — pgmName vacío
+
+---
+
+### Prompt 5 — Actualizar el pipeline
+```
+"si"
+```
+Bob modifica `.github/workflows/build.yml`:
+- `rsync --checksum` + `rm+cp` para evitar caché IFS
+- Paso 3: `RPGUNIT/RUCALLTST` en lugar de verificación manual
+
+---
+
+### Prompt 6 — Commit y push
+```
+"si"
+```
+Bob hace:
+```bash
+git add .
+git commit -m "feat(log300): AddLogEntry pgmName + RPGUnit 6 pruebas"
+git push origin feat/log-add-pgmname
 ```
 
 ---
 
-## Paso 1 · Entender el código (2 min)
+### Paso final — Abrir PR en GitHub
+URL: https://github.com/cdsamericas1/CDS01/compare/main...feat/log-add-pgmname
 
-Abre el archivo en VS Code y copia este prompt en Bob:
+Pipeline se dispara automáticamente:
+1. Copiar fuentes al IFS
+2. `makei build` → compila LOG300 + LOG300T
+3. `RUCALLTST` → 6/6 pruebas verdes
 
-```
-@SAMCO/QRPGLESRC/LOG300.RPGLE
+Resultado: `CPDA0FF: Success. 6 test cases, 6 assertions, 0 failure, 0 error.`
 
-Explica qué hace este programa, qué información guarda en el log
-y cómo funciona el User Space. Escríbelo para alguien que recién
-llega al equipo.
-```
-
-**Qué esperar de Bob:**
-- Explicación del User Space como estructura de memoria compartida
-- Descripción de `AddLogEntry`: recibe un mensaje, añade usuario y timestamp
-- Identificación del gap: no hay campo para el nombre del programa
+PR → **All checks passed** → **Merge**
 
 ---
 
-## Paso 2 · Pedir la mejora (3 min)
-
-Con el archivo todavía abierto, copia este prompt:
-
-```
-@SAMCO/QRPGLESRC/LOG300.RPGLE
-
-El equipo de auditoría necesita que el log incluya el nombre del
-programa que llama a AddLogEntry. Modifica el parámetro de entrada
-y la lógica interna para incluir ese dato entre el usuario y el
-timestamp. Mantén la compatibilidad: el parámetro del programa
-debe ser opcional con default *blanks.
-```
-
-**Qué esperar de Bob:**
-- Modificación del `dcl-pi` para agregar el segundo parámetro `pgmName`
-- Actualización de la línea de construcción del log para incluir `'Pgm: ' + pgmName`
-- Sugerencia de valor por defecto para mantener compatibilidad
-
-**Tu trabajo:** revisar el diff línea a línea antes de aceptar. La IA propone, el desarrollador decide.
-
----
-
-## Paso 3 · Pedir las pruebas (2 min)
-
-```
-@SAMCO/QRPGLESRC/LOG300.RPGLE
-
-Genera pruebas RPGUnit para la nueva versión de AddLogEntry:
-un caso con nombre de programa, un caso con nombre vacío
-y un caso donde el mensaje tiene la longitud máxima.
-```
-
-Ya existe una base en [`SAMCO/qtestsrc/log300.test.rpgle`](SAMCO/qtestsrc/log300.test.rpgle) — Bob puede expandirla.
-
----
-
-## Paso 4 · Versionar (2 min)
+## Comandos de reset
 
 ```bash
-# Crear una rama para el cambio
-git switch -c feat/log-add-pgmname
-
-# Agregar los archivos modificados
-git add SAMCO/QRPGLESRC/LOG300.RPGLE
-git add SAMCO/qtestsrc/log300.test.rpgle
-
-# Commit con mensaje descriptivo
-git commit -m "feat(log300): add program name parameter to AddLogEntry
-
-El auditor requiere trazabilidad del programa de origen en cada
-entrada del log. Se agrega parámetro pgmName opcional (default
-*blanks) para compatibilidad con llamadas existentes."
-
-# Push de la rama
-git push -u origin feat/log-add-pgmname
+# En Bob: "haz el reset"
+# O manualmente:
+cd ~/Downloads/rpg-roadshow/bob-rpg-ibm-i-main
+git checkout main
+git branch -D feat/log-add-pgmname
+git checkout -b feat/log-add-pgmname   # desde 360034e
+git push origin feat/log-add-pgmname --force
 ```
 
-**Mensaje clave para la audiencia:**
-> *"Producción nunca se toca directo. Cada cambio vive en su propia rama hasta que pasa por el pipeline y una aprobación."*
-
----
-
-## Paso 5 · El pipeline (3 min)
-
-Abre GitHub: [github.com/cdsamericas1/CDS01](https://github.com/cdsamericas1/CDS01)
-
-Ve a **Actions** → verás el workflow `SAMCO · build y pruebas en IBM i` ejecutándose.
-
-Muestra los 3 pasos en pantalla:
-
-| Paso | Qué hace |
-|------|----------|
-| ✅ Copiar fuentes al IFS | `rsync` sube el repo al IBM i via SSH |
-| ✅ Compilar con makei | `makei build` compila solo lo que cambió |
-| ✅ Pruebas RPGUnit | `RUCALLTST` ejecuta las 3 pruebas de LOG300 |
-
----
-
-## Paso 6 · Aprobar con evidencia (1 min)
-
-Crea el Pull Request en GitHub. Muestra lo que ve el auditor:
-
-| Pregunta del auditor | Respuesta en el PR |
-|---------------------|-------------------|
-| ¿Quién hizo el cambio? | `cdsamericas1` · commit `feat(log300)...` |
-| ¿Qué cambió exactamente? | Diff línea a línea en el PR |
-| ¿Cuándo? | Fecha y hora del commit |
-| ¿Se probó? | 3/3 pruebas RPGUnit en verde |
-| ¿Quién lo aprobó? | El revisor que hace merge |
-
-> *"Esto es lo que tiene que mostrarle al auditor. Sin correos, sin PDFs de aprobación manual."*
-
----
-
-## Cierre (30 seg)
-
-- El cambio tardó **15 minutos** de idea a Pull Request con evidencia completa
-- El pipeline compiló y probó automáticamente — sin que nadie recordara los parámetros
-- El diff es la documentación — queda en el repo para siempre
-
----
-
-## Prompts de respaldo (si algo falla en vivo)
-
-Si Bob no responde como esperado, aquí están los prompts alternativos:
-
-**Para entender:**
+IBM i (via QSH):
 ```
-¿Qué es un User Space en IBM i y cómo lo usa LOG300 para guardar entradas de log?
-```
-
-**Para modernizar:**
-```
-Muéstrame cómo agregar un segundo parámetro opcional a un procedimiento RPG
-que ya está en producción sin romper el código que lo llama hoy.
-```
-
-**Para pruebas:**
-```
-Escribe una prueba RPGUnit que verifique que AddLogEntry no lanza excepción
-cuando se llama con un mensaje de texto normal.
+system "DLTMOD MODULE(OSWLABBOB/LOG300T)"
+system "DLTSRVPGM SRVPGM(OSWLABBOB/LOG300T)"
+system "DLTUSRSPC USRSPC(OSWLABBOB/SAMLOG)"
+system "RMVM FILE(OSWLABBOB/EVFEVENT) MBR(LOG300T)"
 ```
 
 ---
 
-## Video de respaldo
+## Lecciones aprendidas (resumen)
 
-Si el pipeline falla en vivo, muestra la captura de pantalla guardada en [`assets/`](assets/) o reproduce el video de ensayo.
-
-> ☑️ **Antes de subir al escenario:** prueba el pipeline completo al menos 2 veces. El ensayo es obligatorio.
+| # | Problema | Solución |
+|---|---|---|
+| 1 | IFS guarda inodo viejo al hacer rsync | `rm + cp` del fuente antes de compilar |
+| 2 | `/include` con CCSID 273 falla | Prototipos `DCL-PR` inline, sin `/include` |
+| 3 | evfevent antiguo enmascara errores | `RMVM FILE(LIB/EVFEVENT) MBR(X)` |
+| 4 | `*JOBRUN` no funciona vía `system()` PASE | `"tgtCcsid": "37"` en `.ibmi.json` |
+| 5 | `RPGUNIT.SRVPGM` no existe en v6 | `RUTESTCASE` + `RUMEMMGR` |
+| 6 | SAMLOG no inicializado → MCH3601 | `setUp` con `QUSCRTUS *YES` + `samlogPos = 7` |
 
 ---
 
-*Lab diseñado para iPower26 · CDS Americas · nov 2026*
+## Infraestructura
+
+- **IBM i**: `10.0.0.2`, usuario `oswaldo`, SSH key `~/.ssh/ibmi_actions`
+- **Librería**: `OSWLABBOB`
+- **IFS build dir**: `/home/OSWALDO/builds/samco`
+- **RPGUnit**: v6.0.11.r en librería `RPGUNIT`
+- **Runner**: `~/actions-runner` (self-hosted, Mac)
+- **Repo**: `https://github.com/cdsamericas1/CDS01`
