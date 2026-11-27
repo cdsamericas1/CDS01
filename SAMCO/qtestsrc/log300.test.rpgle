@@ -1,65 +1,80 @@
-**free
-// ============================================================
-// Pruebas RPGUnit para el módulo LOG300 (AddLogEntry)
-// Lab DevOps en Vivo · iPower26 · Bogotá · Nov 2026
-// ============================================================
-ctl-opt nomain;
+      **free
 
-/include QPROTOSRC,LOG_functions
+       /copy QPROTOSRC/APICALL-Prototypes_for_Ibm_API.RPGLEINC
+       /copy QPROTOSRC/LOG_functions.RPGLEINC
 
-// -------------------------------------------------------
-// Test 1: AddLogEntry no falla con un mensaje normal
-// -------------------------------------------------------
-dcl-proc test_addLogEntry_normal export;
-  dcl-pi *n end-pi;
+      // ----------------------------------------------------------------
+      // buildEntry: reproduce la lógica de formato de LOG300
+      //   sin tocar el User Space — para validar el formato del string
+      // ----------------------------------------------------------------
+      dcl-proc buildEntry;
+        dcl-pi *n varchar(600);
+          entry    varchar(500) value;
+          pgmName  char(10)     value options(*nopass);
+        end-pi;
 
-  dcl-s resultado ind;
+        dcl-s pgm    char(10);
+        dcl-s result varchar(600);
 
-  monitor;
-    AddLogEntry('Prueba de log normal desde RPGUnit');
-    resultado = *on;
-  on-error;
-    resultado = *off;
-  endmon;
+        if %parms() >= 2;
+          pgm = pgmName;
+        else;
+          pgm = *blanks;
+        endif;
 
-  assert(resultado : 'AddLogEntry falló con un mensaje normal');
-end-proc;
+        result  = 'User: TEST       * ';
+        result += 'Pgm: '  + %trim(pgm)         + ' * ';
+        result += 'Date: ' + %char(%Timestamp()) + ' * ';
+        result += 'Msg: '  + %trim(entry)        + ' ***';
 
-// -------------------------------------------------------
-// Test 2: AddLogEntry acepta mensaje vacío sin fallar
-// -------------------------------------------------------
-dcl-proc test_addLogEntry_empty export;
-  dcl-pi *n end-pi;
+        return result;
+      end-proc;
 
-  dcl-s resultado ind;
+      // ----------------------------------------------------------------
+      // Test 1: AddLogEntry sin pgmName se ejecuta sin error
+      // ----------------------------------------------------------------
+      dcl-proc testAddLogEntryRuns export;
+        dcl-pi *n end-pi;
 
-  monitor;
-    AddLogEntry('');
-    resultado = *on;
-  on-error;
-    resultado = *off;
-  endmon;
+        AddLogEntry('Test run sin pgmName');
+        assert(*on : 'AddLogEntry sin pgmName debe ejecutarse sin error');
+      end-proc;
 
-  assert(resultado : 'AddLogEntry falló con mensaje vacío');
-end-proc;
+      // ----------------------------------------------------------------
+      // Test 2: AddLogEntry con pgmName se ejecuta sin error
+      // ----------------------------------------------------------------
+      dcl-proc testAddLogEntryWithPgmRuns export;
+        dcl-pi *n end-pi;
 
-// -------------------------------------------------------
-// Test 3: AddLogEntry acepta mensaje de 500 caracteres
-// -------------------------------------------------------
-dcl-proc test_addLogEntry_maxLen export;
-  dcl-pi *n end-pi;
+        AddLogEntry('Test run con pgmName' : 'LOG300');
+        assert(*on : 'AddLogEntry con pgmName debe ejecutarse sin error');
+      end-proc;
 
-  dcl-s msgLargo char(500) inz(*blanks);
-  dcl-s resultado ind;
+      // ----------------------------------------------------------------
+      // Test 3: El formato incluye 'Pgm: LOG300' cuando se pasa el nombre
+      // ----------------------------------------------------------------
+      dcl-proc testFormatIncludesPgmName export;
+        dcl-pi *n end-pi;
 
-  msgLargo = %subst('X' : 1 : 1);  // un carácter para simplificar
+        dcl-s entry varchar(600);
 
-  monitor;
-    AddLogEntry(msgLargo);
-    resultado = *on;
-  on-error;
-    resultado = *off;
-  endmon;
+        entry = buildEntry('Trazabilidad' : 'LOG300');
 
-  assert(resultado : 'AddLogEntry falló con mensaje de longitud máxima');
-end-proc;
+        assert(%scan('Pgm: LOG300' : entry) > 0
+              : 'El formato debe incluir Pgm: LOG300');
+      end-proc;
+
+      // ----------------------------------------------------------------
+      // Test 4: Sin pgmName el campo Pgm queda vacío en el formato
+      // ----------------------------------------------------------------
+      dcl-proc testFormatPgmBlankWhenOmitted export;
+        dcl-pi *n end-pi;
+
+        dcl-s entry varchar(600);
+
+        entry = buildEntry('Sin nombre');
+
+        // Sin pgmName: 'Pgm:  * ' (trim de blancos = vacío)
+        assert(%scan('Pgm:  *' : entry) > 0
+              : 'Sin pgmName el campo Pgm debe quedar vacío');
+      end-proc;

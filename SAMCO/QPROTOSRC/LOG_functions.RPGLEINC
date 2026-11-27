@@ -1,2 +1,3 @@
      d AddLogEntry     pr
      d  entry                       500    value
+     d  pgmName                      10    value options(*nopass)
