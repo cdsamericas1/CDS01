@@ -37,3 +37,8 @@ jobs:
         run: |
           ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
             "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && liblist -a $IBMI_LIB && system \"DSPLIB LIB($IBMI_LIB) OUTPUT(*PRINT)\" && echo Build OK'"
+
+      - name: Ejecutar pruebas RPGUnit
+        run: |
+          ssh -i "$SSH_KEY" "$IBMI_USER@$IBMI_HOST" \
+            "/QOpenSys/pkgs/bin/bash -c 'export PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/usr/bin && system \"CALL PGM(RPGUNIT/RUCALLTST) PARM(*LIBL LOG300T *LIBL *ALLPRC *NOORDER *QUIET)\"'"
