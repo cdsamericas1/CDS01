@@ -4,7 +4,7 @@
        /copy QPROTOSRC/LOG_functions.RPGLEINC
 
       // ----------------------------------------------------------------
-      // buildEntry: reproduce la misma lógica de formato que LOG300
+      // buildEntry: reproduce la lógica de formato de LOG300
       //   sin tocar el User Space — para validar el formato del string
       // ----------------------------------------------------------------
       dcl-proc buildEntry;
@@ -22,10 +22,10 @@
           pgm = *blanks;
         endif;
 
-        result  = 'User: ' + %str(%addr(*USER) : 10) + ' * ';
-        result += 'Pgm: '  + %trim(pgm)        + ' * ';
+        result  = 'User: TEST       * ';
+        result += 'Pgm: '  + %trim(pgm)         + ' * ';
         result += 'Date: ' + %char(%Timestamp()) + ' * ';
-        result += 'Msg: '  + %trim(entry)       + ' ***';
+        result += 'Msg: '  + %trim(entry)        + ' ***';
 
         return result;
       end-proc;
@@ -36,8 +36,6 @@
       dcl-proc testAddLogEntryRuns export;
         dcl-pi *n end-pi;
 
-        // Si AddLogEntry falla con MCH/CEE, RPGUnit reporta el error.
-        // Que llegue a assert(*on) confirma ejecución limpia.
         AddLogEntry('Test run sin pgmName');
         assert(*on : 'AddLogEntry sin pgmName debe ejecutarse sin error');
       end-proc;
@@ -76,7 +74,7 @@
 
         entry = buildEntry('Sin nombre');
 
-        // Pgm: seguido de espacio y ' * ' (sin valor entre medias)
+        // Sin pgmName: 'Pgm:  * ' (trim de blancos = vacío)
         assert(%scan('Pgm:  *' : entry) > 0
               : 'Sin pgmName el campo Pgm debe quedar vacío');
       end-proc;
